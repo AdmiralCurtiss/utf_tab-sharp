@@ -38,6 +38,8 @@ namespace utf_tab_sharp {
 		public uint name_offset;
 		public uint string_table_offset;
 		public uint data_offset;
+
+		public long data_position;
 	}
 
 	public class utf_column_info {
@@ -278,6 +280,10 @@ namespace utf_tab_sharp {
 								}
 							} else {
 								data_offset = row_offset;
+							}
+
+							if (qthis != 0) {
+								result.data_position = data_offset;
 							}
 
 							switch (type & COLUMN_TYPE_MASK) {
