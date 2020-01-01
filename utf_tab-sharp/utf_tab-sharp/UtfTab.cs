@@ -48,22 +48,6 @@ namespace utf_tab_sharp {
 		public long constant_offset;
 	}
 
-	public class utf_table_info {
-		public long table_offset;
-		public uint table_size;
-		public uint schema_offset;
-		public uint rows_offset;
-		public uint string_table_offset;
-		public uint data_offset;
-		public byte[] string_table;
-		public uint table_name; // references index in string_table
-		public ushort columns;
-		public ushort row_width;
-		public uint rows;
-
-		public utf_column_info[] schema;
-	}
-
 	public static class UtfTab {
 		// common version across the suite
 		public const string VERSION = "0.7 beta 3 [C# port]";
@@ -102,7 +86,16 @@ namespace utf_tab_sharp {
 
 		public static utf_query_result analyze_utf(Stream infile, long offset, int indent, int print, utf_query query) {
 			byte[] buf = new byte[4];
-			utf_table_info table_info = new utf_table_info();
+			long table_info_table_offset;
+			uint table_info_table_size;
+			uint table_info_schema_offset;
+			uint table_info_rows_offset;
+			uint table_info_string_table_offset;
+			uint table_info_data_offset;
+			uint table_info_table_name; // references index in string_table
+			ushort table_info_columns;
+			ushort table_info_row_width;
+			uint table_info_rows;
 			byte[] string_table = null;
 			utf_column_info[] schema = null;
 			utf_query_result result = new utf_query_result();
@@ -116,7 +109,7 @@ namespace utf_tab_sharp {
 
 			indent += INDENT_LEVEL;
 
-			table_info.table_offset = offset;
+			table_info_table_offset = offset;
 
 			// check header
 			byte[] UTF_signature = Encoding.ASCII.GetBytes("@UTF");
@@ -140,31 +133,30 @@ namespace utf_tab_sharp {
 			}
 
 			// get table size
-			table_info.table_size = Util.get_32_be(infile);
+			table_info_table_size = Util.get_32_be(infile);
 
-			table_info.schema_offset = 0x20;
-			table_info.rows_offset = Util.get_32_be(infile);
-			table_info.string_table_offset = Util.get_32_be(infile);
-			table_info.data_offset = Util.get_32_be(infile);
+			table_info_schema_offset = 0x20;
+			table_info_rows_offset = Util.get_32_be(infile);
+			table_info_string_table_offset = Util.get_32_be(infile);
+			table_info_data_offset = Util.get_32_be(infile);
 			uint table_name_string = Util.get_32_be(infile);
-			table_info.columns = Util.get_16_be(infile);
-			table_info.row_width = Util.get_16_be(infile);
-			table_info.rows = Util.get_32_be(infile);
+			table_info_columns = Util.get_16_be(infile);
+			table_info_row_width = Util.get_16_be(infile);
+			table_info_rows = Util.get_32_be(infile);
 
 			// allocate for string table
 			long string_table_size =
-				table_info.data_offset - table_info.string_table_offset;
+				table_info_data_offset - table_info_string_table_offset;
 			string_table = new byte[string_table_size + 1];
-			table_info.string_table = string_table;
 
 			// load schema
-			schema = new utf_column_info[table_info.columns];
+			schema = new utf_column_info[table_info_columns];
 			for (int i = 0; i < schema.Length; ++i) {
 				schema[i] = new utf_column_info();
 			}
 			{
 				int i;
-				for (i = 0; i < table_info.columns; i++) {
+				for (i = 0; i < table_info_columns; i++) {
 					schema[i].type = Util.get_byte(infile);
 					schema[i].column_name = Util.get_32_be(infile);
 
@@ -200,49 +192,46 @@ namespace utf_tab_sharp {
 				}
 			}
 
-			table_info.schema = schema;
-
 			// read string table
-			Util.get_bytes_seek(table_info.string_table_offset + 8 + offset,
+			Util.get_bytes_seek(table_info_string_table_offset + 8 + offset,
 					infile, string_table, string_table_size);
-			table_info.table_name = table_name_string;
+			table_info_table_name = table_name_string;
 
 			// fill in the default stuff
 			result.valid = 1;
 			result.found = 0;
-			result.rows = table_info.rows;
+			result.rows = table_info_rows;
 			result.name_offset = table_name_string;
-			result.string_table_offset = table_info.string_table_offset;
-			result.data_offset = table_info.data_offset;
+			result.string_table_offset = table_info_string_table_offset;
+			result.data_offset = table_info_data_offset;
 
 			// explore the values
 			if (query != null || print != 0) {
 				int i, j;
 
-				for (i = 0; i < table_info.rows; i++) {
+				for (i = 0; i < table_info_rows; i++) {
 					if (print == 0 && query != null && i != query.index) continue;
 
 					long row_offset =
-						table_info.table_offset + 8 + table_info.rows_offset +
-						i * table_info.row_width;
+						table_info_table_offset + 8 + table_info_rows_offset +
+						i * table_info_row_width;
 					long row_start_offset = row_offset;
 
 					if (print != 0) {
 						Util.printf_indent(indent);
-						Console.WriteLine("{0}[{1}] = {{", ReadString(table_info.string_table, table_info.table_name), i);
+						Console.WriteLine("{0}[{1}] = {{", ReadString(string_table, table_info_table_name), i);
 					}
 					indent += INDENT_LEVEL;
-					for (j = 0; j < table_info.columns; j++) {
-						byte type = table_info.schema[j].type;
-						long constant_offset = table_info.schema[j].constant_offset;
+					for (j = 0; j < table_info_columns; j++) {
+						byte type = schema[j].type;
+						long constant_offset = schema[j].constant_offset;
 						int constant = 0;
 
-						int qthis = (query != null && i == query.index &&
-								ReadString(table_info.string_table, table_info.schema[j].column_name) == query.name) ? 1 : 0;
+						int qthis = (query != null && i == query.index && ReadString(string_table, schema[j].column_name) == query.name) ? 1 : 0;
 
 						if (print != 0) {
 							Util.printf_indent(indent);
-							Console.Write("{0:x8} {1:x2} {2} = ", row_offset - row_start_offset, type, ReadString(table_info.string_table, table_info.schema[j].column_name));
+							Console.Write("{0:x8} {1:x2} {2} = ", row_offset - row_start_offset, type, ReadString(string_table, schema[j].column_name));
 						}
 
 						if (qthis != 0) {
@@ -292,7 +281,7 @@ namespace utf_tab_sharp {
 									string_offset = Util.get_32_be_seek(data_offset, infile);
 									bytes_read = 4;
 									if (print != 0) {
-										Console.WriteLine("\"{0}\"", ReadString(table_info.string_table, string_offset));
+										Console.WriteLine("\"{0}\"", ReadString(string_table, string_offset));
 									}
 									if (qthis != 0) {
 										result.value_string = string_offset;
@@ -316,8 +305,8 @@ namespace utf_tab_sharp {
 									if (vardata_size != 0 && print != 0) {
 										// assume that the data is another table
 										analyze_utf(infile,
-												table_info.table_offset + 8 +
-												table_info.data_offset +
+												table_info_table_offset + 8 +
+												table_info_data_offset +
 												vardata_offset,
 												indent,
 												print,
@@ -416,7 +405,7 @@ namespace utf_tab_sharp {
 						Console.WriteLine("}");
 					}
 
-					ErrorStuff.CHECK_ERROR(row_offset - row_start_offset != table_info.row_width,
+					ErrorStuff.CHECK_ERROR(row_offset - row_start_offset != table_info_row_width,
 							"column widths do now add up to row width");
 
 					if (query != null && print == 0 && i >= query.index) break;
