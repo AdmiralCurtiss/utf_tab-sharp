@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CpkCompress.cs" />
     <Compile Include="CpkUncompress.cs" />
     <Compile Include="CpkUnpack.cs" />
     <Compile Include="ErrorStuff.cs" />

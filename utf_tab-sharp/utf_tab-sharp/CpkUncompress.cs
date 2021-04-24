@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace utf_tab_sharp {
 	public static class CpkUncompress {
-		const ulong CRILAYLA_sig = 0x4352494C41594C41u;
+		internal const ulong CRILAYLA_sig = 0x4352494C41594C41u;
 
 		// only for up to 16 bits
 		public static ushort get_next_bits(byte[] infile, ref long offset_p, ref byte bit_pool_p, ref int bits_left_p, int bit_count) {
