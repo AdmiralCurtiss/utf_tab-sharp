@@ -187,6 +187,85 @@ namespace utf_tab_sharp {
 			}
 		}
 
+		private class BackrefFinderCache {
+			// key is the first three bytes at that position
+			// value is positions in stream you can find that key at
+			Dictionary<int, SortedSet<long>> Cache = new Dictionary<int, SortedSet<long>>();
+			// cache contains data [ContentsLow, ContentsHigh)
+			long CacheContentsLowPosition;
+			long CacheContentsHighPosition;
+
+			public BackrefFinderCache(long length) {
+				CacheContentsLowPosition = length;
+				CacheContentsHighPosition = length;
+			}
+
+			private static int GetKey(byte[] data, long pos) {
+				return (((int)data[pos]) | ((int)(data[pos - 1] << 8))) | ((int)(data[pos - 2] << 16));
+			}
+
+			private void SyncCache(byte[] data, long pos) {
+				long startAllowedCacheEntry = Math.Min(pos + 3, data.LongLength);
+				long endAllowedCacheEntry = Math.Min(pos + 0x2003, data.LongLength);
+				long high = CacheContentsHighPosition;
+				long low = CacheContentsLowPosition;
+
+				for (long i = endAllowedCacheEntry; i < high; ++i) {
+					int key = GetKey(data, i);
+					SortedSet<long> positions;
+					if (Cache.TryGetValue(key, out positions)) {
+						positions.Remove(i);
+					}
+				}
+
+				long last = Math.Min(low, endAllowedCacheEntry);
+				for (long i = startAllowedCacheEntry; i < last; ++i) {
+					int key = GetKey(data, i);
+					SortedSet<long> positions;
+					if (!Cache.TryGetValue(key, out positions)) {
+						positions = new SortedSet<long>();
+						Cache.Add(key, positions);
+					}
+					positions.Add(i);
+				}
+
+				CacheContentsLowPosition = startAllowedCacheEntry;
+				CacheContentsHighPosition = endAllowedCacheEntry;
+			}
+
+			public void GetBackref(byte[] data, long pos, out ushort where, out long length) {
+				if (pos < 2) {
+					FindLongestBackreference(data, pos, out where, out length);
+					return;
+				}
+
+				where = 0;
+				length = 0;
+
+				SyncCache(data, pos);
+				int key = GetKey(data, pos);
+				SortedSet<long> positions;
+				if (!Cache.TryGetValue(key, out positions)) {
+					return;
+				}
+
+				foreach (long backrefStart in positions) {
+					long backrefOffset = backrefStart - 3;
+					long dataOffset = pos - 3;
+					while (dataOffset > 0 && data[dataOffset] == data[backrefOffset]) {
+						--dataOffset;
+						--backrefOffset;
+					}
+
+					long backrefLength = pos - dataOffset;
+					if (backrefLength > length) {
+						length = backrefLength;
+						where = (ushort)((backrefStart - pos) - 3);
+					}
+				}
+			}
+		}
+
 		public static long compress(Stream infile, long offset, long length, Stream outfile) {
 			if (length <= 0x100) {
 				throw new Exception("data too short, can't compress this");
@@ -202,10 +281,11 @@ namespace utf_tab_sharp {
 
 			// compress
 			CrilaylaBitstream output = new CrilaylaBitstream();
+			BackrefFinderCache cache = new BackrefFinderCache(input.LongLength);
 			while (currentPosition >= 0) {
 				ushort backrefPos;
 				long backrefLen;
-				FindLongestBackreference(input, currentPosition, out backrefPos, out backrefLen);
+				cache.GetBackref(input, currentPosition, out backrefPos, out backrefLen);
 				if (backrefLen >= 3) {
 					output.PushBit(1);
 					output.PushBits13(backrefPos);
