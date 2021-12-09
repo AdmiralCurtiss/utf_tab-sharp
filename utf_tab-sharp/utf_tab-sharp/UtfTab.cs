@@ -88,7 +88,7 @@ namespace utf_tab_sharp {
 			byte[] buf = new byte[4];
 			long table_info_table_offset;
 			uint table_info_table_size;
-			uint table_info_schema_offset;
+			//uint table_info_schema_offset;
 			uint table_info_rows_offset;
 			uint table_info_string_table_offset;
 			uint table_info_data_offset;
@@ -135,7 +135,7 @@ namespace utf_tab_sharp {
 			// get table size
 			table_info_table_size = Util.get_32_be(infile);
 
-			table_info_schema_offset = 0x20;
+			//table_info_schema_offset = 0x20;
 			table_info_rows_offset = Util.get_32_be(infile);
 			table_info_string_table_offset = Util.get_32_be(infile);
 			table_info_data_offset = Util.get_32_be(infile);
