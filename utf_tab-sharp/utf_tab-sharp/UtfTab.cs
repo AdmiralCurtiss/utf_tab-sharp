@@ -9,6 +9,11 @@ namespace utf_tab_sharp {
 	public class utf_query {
 		public string name;
 		public int index;
+
+		public utf_query(string name, int index) {
+			this.name = name;
+			this.index = index;
+		}
 	}
 
 	public struct offset_size_pair {
@@ -84,7 +89,7 @@ namespace utf_tab_sharp {
 			return Encoding.UTF8.GetString(string_table, (int)offset, count);
 		}
 
-		public static utf_query_result analyze_utf(Stream infile, long offset, int indent, int print, utf_query query) {
+		public static utf_query_result analyze_utf(Stream infile, long offset, int indent, int print, utf_query? query) {
 			byte[] buf = new byte[4];
 			long table_info_table_offset;
 			uint table_info_table_size;
@@ -96,8 +101,8 @@ namespace utf_tab_sharp {
 			ushort table_info_columns;
 			ushort table_info_row_width;
 			uint table_info_rows;
-			byte[] string_table = null;
-			utf_column_info[] schema = null;
+			byte[]? string_table = null;
+			utf_column_info[]? schema = null;
 			utf_query_result result = new utf_query_result();
 
 			result.valid = 0;
@@ -424,11 +429,11 @@ namespace utf_tab_sharp {
 			return result;
 		}
 
-		public static utf_query_result query_utf(Stream infile, long offset, utf_query query) {
+		public static utf_query_result query_utf(Stream infile, long offset, utf_query? query) {
 			return analyze_utf(infile, offset, 0, 0, query);
 		}
 
-		public static utf_query_result query_utf_nofail(Stream infile, long offset, utf_query query) {
+		public static utf_query_result query_utf_nofail(Stream infile, long offset, utf_query? query) {
 			utf_query_result result = query_utf(infile, offset, query);
 
 			ErrorStuff.CHECK_ERROR(result.valid == 0, "didn't find valid @UTF table where one was expected");
@@ -437,10 +442,7 @@ namespace utf_tab_sharp {
 			return result;
 		}
 		public static utf_query_result query_utf_key(Stream infile, long offset, int index, string name) {
-			utf_query query = new utf_query();
-			query.index = index;
-			query.name = name;
-
+			utf_query query = new utf_query(name, index);
 			return query_utf_nofail(infile, offset, query);
 		}
 

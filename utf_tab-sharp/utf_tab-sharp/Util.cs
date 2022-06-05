@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace utf_tab_sharp {
 	public static class Util {
-		public static Stream open_file_in_directory(string base_name, string dir_name, char orig_sep, string file_name, FileMode mode, FileAccess access, FileShare share) {
+		public static Stream open_file_in_directory(string base_name, string? dir_name, char orig_sep, string file_name, FileMode mode, FileAccess access, FileShare share) {
 			string full_name = base_name;
 			if (dir_name != null) {
 				full_name = Path.Combine(base_name, dir_name);

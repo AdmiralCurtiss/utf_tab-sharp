@@ -212,7 +212,7 @@ namespace utf_tab_sharp {
 
 				for (long i = endAllowedCacheEntry; i < high; ++i) {
 					int key = GetKey(data, i);
-					SortedSet<long> positions;
+					SortedSet<long>? positions;
 					if (Cache.TryGetValue(key, out positions)) {
 						positions.Remove(i);
 					}
@@ -221,7 +221,7 @@ namespace utf_tab_sharp {
 				long last = Math.Min(low, endAllowedCacheEntry);
 				for (long i = startAllowedCacheEntry; i < last; ++i) {
 					int key = GetKey(data, i);
-					SortedSet<long> positions;
+					SortedSet<long>? positions;
 					if (!Cache.TryGetValue(key, out positions)) {
 						positions = new SortedSet<long>();
 						Cache.Add(key, positions);
@@ -244,7 +244,7 @@ namespace utf_tab_sharp {
 
 				SyncCache(data, pos);
 				int key = GetKey(data, pos);
-				SortedSet<long> positions;
+				SortedSet<long>? positions;
 				if (!Cache.TryGetValue(key, out positions)) {
 					return;
 				}

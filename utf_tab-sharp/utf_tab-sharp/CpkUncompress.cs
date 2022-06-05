@@ -40,7 +40,6 @@ namespace utf_tab_sharp {
 		}
 
 		public static long uncompress(Stream infile, long offset, long input_size, Stream outfile) {
-			byte[] output_buffer = null;
 			ulong magic = Util.get_64_be_seek(offset + 0x00, infile);
 			ErrorStuff.CHECK_ERROR(!((magic == 0) || (magic == CRILAYLA_sig)), "didn't find 0 or CRILAYLA signature for compressed data");
 
@@ -52,9 +51,7 @@ namespace utf_tab_sharp {
 
 			ErrorStuff.CHECK_ERROR(uncompressed_header_offset + 0x100 != offset + input_size, "size mismatch");
 
-			output_buffer = new byte[uncompressed_size + 0x100];
-			ErrorStuff.CHECK_ERROR(output_buffer == null, "malloc");
-
+			byte[] output_buffer = new byte[uncompressed_size + 0x100];
 			Util.get_bytes_seek(uncompressed_header_offset, infile, output_buffer, 0x100);
 
 			long buffer_input_size = input_size - 0x100;
@@ -125,7 +122,6 @@ namespace utf_tab_sharp {
 			}
 
 			Util.put_bytes_seek(0, outfile, output_buffer, 0x100 + uncompressed_size);
-			output_buffer = null;
 
 			return 0x100 + bytes_output;
 		}

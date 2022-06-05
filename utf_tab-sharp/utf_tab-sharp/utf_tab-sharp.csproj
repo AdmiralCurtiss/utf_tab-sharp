@@ -4,5 +4,6 @@
     <OutputType>Library</OutputType>
     <RootNamespace>utf_tab_sharp</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 </Project>

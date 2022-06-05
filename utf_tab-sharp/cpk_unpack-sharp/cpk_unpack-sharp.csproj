@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>cpk_unpack_sharp</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\utf_tab-sharp\utf_tab-sharp.csproj" />

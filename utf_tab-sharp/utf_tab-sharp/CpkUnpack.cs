@@ -33,7 +33,7 @@ namespace utf_tab_sharp {
 
 		public static void analyze_CPK(Stream infile, string base_name, long file_length) {
 			const long CpkHeader_offset = 0x0;
-			byte[] toc_string_table = null;
+			byte[] toc_string_table;
 
 			// check header
 			{
@@ -112,8 +112,6 @@ namespace utf_tab_sharp {
 				Console.WriteLine("{0}/{1} 0x{2:x} {3}",
 						dir_name, file_name, (ulong)file_offset, file_size);
 				using (Stream outfile = Util.open_file_in_directory(base_name, dir_name, '/', file_name, FileMode.Create, FileAccess.ReadWrite, FileShare.None)) {
-					ErrorStuff.CHECK_ERRNO(outfile == null, "fopen");
-
 					if (extract_size > file_size) {
 						long uncompressed_size =
 							CpkUncompress.uncompress(infile, file_offset, file_size, outfile);
@@ -126,8 +124,6 @@ namespace utf_tab_sharp {
 					}
 				}
 			}
-
-			toc_string_table = null;
 		}
 	}
 }
